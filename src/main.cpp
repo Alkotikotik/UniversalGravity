@@ -33,7 +33,7 @@ int main()
 	InitWindow(ScreenWidth, ScreenHight, "Universe");
 
 	Balls Oneball;
-	Oneball.position = { 740.0f, 690.0f };
+	Oneball.position = { 740.0f, 590.0f };
 	Oneball.velocity = { 0.0f, 0.0f };
 	Oneball.acceleration = { 0.0f, 0.0f };
 	Oneball.mass = 500000000.0f;
