@@ -27,7 +27,7 @@ int main()
 	const int ScreenWidth = 1920;
 	const int ScreenHight = 1080;
 
-	const float GravitationalConstant = 6.674 * pow(10, 0);
+	const float GravitationalConstant = 6.674 * pow(10, -1);
 
 	SetConfigFlags(FLAG_MSAA_4X_HINT);
 	InitWindow(ScreenWidth, ScreenHight, "Universe");
@@ -40,8 +40,8 @@ int main()
 	Oneball.force = { 0.0f, 0.0f };
 
 	Balls Twoball;
-	Twoball.position = { 680.0f, 360.0f };
-	Twoball.velocity = { 0.0f, 150.0f };
+	Twoball.position = { 665.0f, 360.0f };
+	Twoball.velocity = { 0.0f, 100.0f };
 	Twoball.acceleration = { 0.0f, 0.0f };
 	Twoball.mass = 5000.0f;
 	Twoball.force = { 0.0f, 0.0f };
