@@ -16,7 +16,7 @@ public:
 	Balls(Vector2 pos = { 0.0f, 0.0f },
 		Vector2 vel = { 0.0f, 0.0f },
 		Vector2 acc = { 0.0f, 0.0f },
-		Vector2 force = {0.0f, 0.0f},
+		Vector2 force = { 0.0f, 0.0f },
 		float m = 1)
 		: position(pos), velocity(vel), acceleration(acc), mass(m) {
 	}
@@ -27,7 +27,7 @@ int main()
 	const int ScreenWidth = 1280;
 	const int ScreenHight = 720;
 
-	const float GravitationalConstant = 6.674*pow(10, 5);
+	const float GravitationalConstant = 6.674 * pow(10, 5);
 
 	SetConfigFlags(FLAG_MSAA_4X_HINT);
 	InitWindow(ScreenWidth, ScreenHight, "Universe");
@@ -45,7 +45,7 @@ int main()
 	Twoball.acceleration = { 0.0f, 0.0f };
 	Twoball.mass = 9000000.0f;
 	Twoball.force = { 0.0f, 0.0f };
-	
+
 
 	const int radius = 24;
 
@@ -69,14 +69,31 @@ int main()
 		Vector2 VectorDis = { (Oneball.position.x - Twoball.position.x),(Oneball.position.y - Twoball.position.y) };
 		//It is something cool
 		Vector2 UnitVectOne = { (Oneball.position.x / distance), (Oneball.position.y / distance) };
-		//ForceX calc
-		Oneball.force.x =-fabs(((GravitationalConstant*((Oneball.mass+Twoball.mass)/(distance*distance)))*UnitVectOne.x));
-		//ForceY calc
-		Oneball.force.y = -fabs(((GravitationalConstant * ((Oneball.mass + Twoball.mass) / (distance * distance))) * UnitVectOne.y));
-		//Ugh Done!
-		//Now state that forces are equal(almost)
-		Twoball.force.x = fabs(Oneball.force.x);
-		Twoball.force.y = fabs(Oneball.force.y);
+
+		//If Oneball is lower than Twoball
+		if (Oneball.position.x < Twoball.position.x || Oneball.position.y < Twoball.position.y)
+		{
+			Oneball.force.x = fabs(((GravitationalConstant * ((Oneball.mass + Twoball.mass) / (distance * distance))) * UnitVectOne.x));
+			//ForceY calc
+			Oneball.force.y = fabs(((GravitationalConstant * ((Oneball.mass + Twoball.mass) / (distance * distance))) * UnitVectOne.y));
+			//Ugh Done!
+			//Now state that forces are equal(almost)
+			Twoball.force.x = -fabs(Oneball.force.x);
+			Twoball.force.y = -fabs(Oneball.force.y);
+		}
+		//If Oneball is higher than Twoball
+		else
+		{
+			//ForceX calc
+			Oneball.force.x = -fabs(((GravitationalConstant * ((Oneball.mass + Twoball.mass) / (distance * distance))) * UnitVectOne.x));
+			//ForceY calc
+			Oneball.force.y = -fabs(((GravitationalConstant * ((Oneball.mass + Twoball.mass) / (distance * distance))) * UnitVectOne.y));
+			//Ugh Done!
+			//Now state that forces are equal(almost)
+			Twoball.force.x = fabs(Oneball.force.x);
+			Twoball.force.y = fabs(Oneball.force.y);
+		}
+		
 		//Now accel
 		Oneball.acceleration.x = (Oneball.force.x / Oneball.mass) * deltaTime;
 		Oneball.acceleration.y = (Oneball.force.y / Oneball.mass) * deltaTime;
