@@ -24,26 +24,26 @@ public:
 
 int main()
 {
-	const int ScreenWidth = 1280;
-	const int ScreenHight = 720;
+	const int ScreenWidth = 1920;
+	const int ScreenHight = 1080;
 
-	const float GravitationalConstant = 6.674 * pow(10, 6);
+	const float GravitationalConstant = 6.674 * pow(10, 0);
 
 	SetConfigFlags(FLAG_MSAA_4X_HINT);
 	InitWindow(ScreenWidth, ScreenHight, "Universe");
 
 	Balls Oneball;
-	Oneball.position = { 740.0f, 590.0f };
+	Oneball.position = { 960.0f, 540.0f };
 	Oneball.velocity = { 0.0f, 0.0f };
 	Oneball.acceleration = { 0.0f, 0.0f };
 	Oneball.mass = 500000000.0f;
 	Oneball.force = { 0.0f, 0.0f };
 
 	Balls Twoball;
-	Twoball.position = { 540.0f, 320.0f };
-	Twoball.velocity = { 0.0f, 0.0f };
+	Twoball.position = { 680.0f, 360.0f };
+	Twoball.velocity = { 0.0f, 150.0f };
 	Twoball.acceleration = { 0.0f, 0.0f };
-	Twoball.mass = 900000000.0f;
+	Twoball.mass = 5000.0f;
 	Twoball.force = { 0.0f, 0.0f };
 
 
@@ -65,19 +65,20 @@ int main()
 		Vector2 WDistance = { (Oneball.position.x - Twoball.position.x), (Oneball.position.y - Twoball.position.y) };
 		//Distance calculated by pathagorous
 		float distance = sqrtf((WDistance.x * WDistance.x) + (WDistance.y * WDistance.y));
+
 		//Vector distance between two masses
 		Vector2 VectorDis = { (Twoball.position.x - Oneball.position.x),(Twoball.position.y - Oneball.position.y) };
 		//It is something cool
-		Vector2 UnitVectOne = { (Oneball.position.x / distance), (Oneball.position.y / distance) };
+		Vector2 UnitVectOne = { (VectorDis.x / distance), (VectorDis.y / distance) };
 
 		//ForceX calc
-		Oneball.force.x = -fabs(((GravitationalConstant * ((Oneball.mass + Twoball.mass) / (distance * distance))) * UnitVectOne.x));
+		Oneball.force.x = ((GravitationalConstant * ((Oneball.mass * Twoball.mass) / (distance * distance))) * UnitVectOne.x);
 		//ForceY calc
-		Oneball.force.y = -fabs(((GravitationalConstant * ((Oneball.mass + Twoball.mass) / (distance * distance))) * UnitVectOne.y));
+		Oneball.force.y = ((GravitationalConstant * ((Oneball.mass * Twoball.mass) / (distance * distance))) * UnitVectOne.y);
 		//Ugh Done!
 		//Now state that forces are equal(almost)
-		Twoball.force.x = fabs(Oneball.force.x);
-		Twoball.force.y = fabs(Oneball.force.y);
+		Twoball.force.x = -Oneball.force.x;
+		Twoball.force.y = -Oneball.force.y;
 
 		
 		//Now accel
