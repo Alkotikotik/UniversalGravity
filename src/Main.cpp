@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <array>
+#include <raymath.h>
 using namespace std;
 
 //for matrices
@@ -15,37 +16,40 @@ using Matrix2x2 = std::vector<std::vector<double>>;
 // The whole system class
 class NbodySimulation {
 public:
-    //Constructor to set start masses
+    //Constructor to set start objects
     NbodySimulation(const vector<vector<double>>& Xi,
         const vector<double>& masses,
         const vector<int>& radii,
-        const vector<array<string, 2>>& colors,
-        const double G = 6.674e-11)
-        : Xi(Xi), masses(masses), G(G) {
-        assert(Xi.size() == masses.size() && masses.size() == radii.size() && radii.size() == colors.size());  // Validate input
+        const vector<Color>& colors,
+        double G = 6.674e-11)
+        : Xi(Xi), masses(masses), radii(radii), colors(colors), G(G),
+        pairs(combinations(Xi.size())),
+        trails(Xi.size()) //  Initialize trails with empty vectors for each body
+    {
+        assert(Xi.size() == masses.size() && masses.size() == radii.size() && radii.size() == colors.size());
+        for (const auto& x : Xi) {
+            assert(x.size() == 6);
+        }
     }
 
+
     //Useful variables
-    const int Nnumber = Xi.size();
-    int totalCombs = Nnumber - 1;
-    const int dt = GetFrameTime();
+    int getN() const { return Xi.size(); }
+    int totalCombs = Xi.size()-1;
+    bool TwoD = false;
+    Color AllColors[21] = {
+       DARKGRAY, MAROON, ORANGE, DARKGREEN, DARKBLUE, DARKPURPLE, DARKBROWN,
+       GRAY, RED, GOLD, LIME, BLUE, VIOLET, BROWN, LIGHTGRAY, PINK, YELLOW,
+       GREEN, SKYBLUE, PURPLE, BEIGE };
+    
 
     //Calculating pairs
-    vector<pair<int, int>> combinations(int Nnumber, int totalCombs)
+    vector<pair<int, int>> combinations(int N) 
     {
         vector<pair<int, int>> pairs;
-        if (totalCombs > Nnumber || totalCombs <= 0) return pairs;
-        vector<int> indices(totalCombs);
-        for (int i = 0; i < totalCombs; ++i) indices[i] = i;
-
-        while (true) {
-            pairs.emplace_back(indices);  // Save current combination
-            int i = totalCombs - 1;
-            while (i >= 0 && indices[i] == i + Nnumber - totalCombs) i--;
-            if (i < 0) break;
-            indices[i]++;
-            for (int j = i + 1; j < totalCombs; ++j) {
-                indices[j] = indices[j - 1] + 1;
+        for (int i = 0; i < N; ++i) {
+            for (int j = i + 1; j < N; ++j) {
+                pairs.emplace_back(i, j);  // Store pairs (i,j) where i < j
             }
         }
         return pairs;
@@ -54,169 +58,201 @@ public:
     //Getting state derivative function 
     Matrix2x2 StateDir(const vector<vector<double>>& Xi, vector<std::pair<int, int>>& pairs)
     {
-        const int D = 2; //D = dimensions
-        const int Nnumber = Xi.size(); //Number of objects
-        Matrix2x2 Xdot;
-        Matrix2x2 V; // Velocity submatrix
-        Matrix2x2 R; //Position submatrix
+        const int D = 3; //Dementions
+        const int N = Xi.size(); //Number of bodies
+        Matrix2x2 Xdot(N, vector<double>(6, 0.0));  // [xdot, ydot, zdot, vxdot, vydot, vzdot]
 
-        // Extract positions (R = X[:, :D])
-        R.resize(Nnumber, std::vector<double>(D));
-        for (int i = 0; i < Nnumber; ++i) {
-            for (int j = 0; j < D; ++j) {
-                R[i][j] = Xi[i][j];
-            }
+        // First, copy velocities to position derivatives
+        for (int i = 0; i < N; ++i) {
+            Xdot[i][0] = Xi[i][3]; // xdot = vx
+            Xdot[i][1] = Xi[i][4]; // ydot = vy
+            Xdot[i][2] = Xi[i][5];
         }
 
-        // Extract velocities (V = X[:, D:])
-        V.resize(Nnumber, std::vector<double>(D));
-        for (int i = 0; i < Nnumber; ++i) {
-            for (int j = 0; j < D; ++j) {
-                V[i][j] = Xi[i][D + j];
-            }
-        }
-
-        // Initialize Xdot (np.zeros_like(X))
-        Xdot = Matrix2x2(Nnumber, std::vector<double>(2 * D, 0.0));
-
-        // Fill velocity part (Xdot[:, :D] = V)
-        for (int i = 0; i < Nnumber; ++i) {
-            for (int j = 0; j < D; ++j) {
-                Xdot[i][j] = V[i][j]; // Copy velocities to position derivatives
-            }
-        }
-
-
-        for (const auto& [body_i, body_j] : pairs)
+        // Calculate accelerations for each pair
+        for (const auto& [i, j] : pairs)
         {
-            Vector2 ipos = { Xi[0][body_i], Xi[1][body_i] };
-            Vector2 jpos = { Xi[0][body_j], Xi[1][body_j] };
+            // d = distance <Dimention: x, y, z>
+            // f = Force <Dimention: x, y, z>
 
-            Vector2 r_vec = { ipos.x - jpos.x, ipos.y - jpos.y };
+            //Force magnitude calculations
+            double dx = Xi[j][0] - Xi[i][0]; //x distance between i and j 
+            double dy = Xi[j][1] - Xi[i][1];
+            double dz = Xi[j][2] - Xi[i][2];
+            double r_squared = dx * dx + dy * dy + dz * dz;
+            double r = sqrt(r_squared);
+            double force_magnitude = G * masses[i] * masses[j] / r_squared;
 
-            double r = sqrtf((r_vec.x * r_vec.x) + (r_vec.y * r_vec.y));
+            //Force direction calculation for x, y, z
+            double fx = force_magnitude * dx / r;
+            double fy = force_magnitude * dy / r;
+            double fz = force_magnitude * dz / r;
 
-            Vector2 Force = { G * ((masses[body_i] * masses[body_j] * r_vec.x) / (r * r * r)),
-                G * ((masses[body_i] * masses[body_j] * r_vec.y) / (r * r * r)) };
+            // Update accelerations (F = ma)
+            Xdot[i][3] += fx / masses[i]; // vxdot for i
+            Xdot[i][4] += fy / masses[i];
+            Xdot[i][5] += fz / masses[i];
 
-            vector<double> iAccel = { (Force.x / masses[body_i]), (Force.y / masses[body_i]) };
-            vector<double> jAccel = { (Force.x / masses[body_j]), (Force.y / masses[body_j]) };
-
-            for (int k = 0; k < 2; ++k) {
-                Xdot[body_i][D + k] += jAccel[k];  // Manually iterate over columns D onward
-            }
-            for (int k = 0; k < 2; ++k) {
-                Xdot[body_j][D + k] += jAccel[k];  // Manually iterate over columns D onward
-            }
-
-            return Xdot;
+            Xdot[j][3] -= fx / masses[j]; // vxdot for j (opposite force)
+            Xdot[j][4] -= fy / masses[j]; 
+            Xdot[j][5] -= fz / masses[j];
         }
+
+        return Xdot;
     }
+         
 
-
-    //rk itegral, basically the heart of calculations
-    Matrix2x2 rk4(vector<vector<double>>& Xi, const int dt, vector<pair<int, int>> pairs)
+    //rk4 itegral, basically the heart of calculations
+    Matrix2x2 rk4(vector<vector<double>>& Xi, const float dt, vector<pair<int, int>> pairs)
     {
+        const int D = 3;
+        int N = Xi.size();
 
-        //rk4 formula: (1/6.)*(k1 + 2*k2 + 2*k3 + k4) 
-
-        int D = 2;
+        // k1 = f(t, y)
         Matrix2x2 k1 = StateDir(Xi, pairs);
-        Matrix2x2 k2;
-        Matrix2x2 k3;
-        Matrix2x2 k4;
 
+        // k2 = f(t + dt/2, y + k1*dt/2)
+        Matrix2x2 temp = Xi;
 
-        //k2 calcs based on k2 = Xi + 0.5*k1*dt formula
-        for (int i = 0; i < k1.size(); ++i) 
-        {
-            for (int j = 0; j < k1.size(); ++j) 
-            {
-                k2[i][j] = (Xi[i][j]+(k1[i][j] * 0.5 * dt));
-                k2 = StateDir(k2, pairs);
+        for (size_t i = 0; i < Xi.size(); ++i) {
+            for (size_t j = 0; j < Xi[i].size(); ++j) {
+                temp[i][j] = Xi[i][j] + k1[i][j] * (dt / 2);
+            }
+        }
+        Matrix2x2 k2 = StateDir(temp, pairs);
+
+        // k3 = f(t + dt/2, y + k2*dt/2)
+
+        for (size_t i = 0; i < Xi.size(); ++i) {
+            for (size_t j = 0; j < Xi[i].size(); ++j) {
+                temp[i][j] = Xi[i][j] + k2[i][j] * (dt / 2);
+            }
+        }
+        Matrix2x2 k3 = StateDir(temp, pairs);
+
+        // k4 = f(t + dt, y + k3*dt)
+
+        for (size_t i = 0; i < Xi.size(); ++i) {
+            for (size_t j = 0; j < Xi[i].size(); ++j) {
+                temp[i][j] = Xi[i][j] + k3[i][j] * dt;
+            }
+        }
+        Matrix2x2 k4 = StateDir(temp, pairs);
+
+        // Combine results
+        for (size_t i = 0; i < Xi.size(); ++i) {
+            for (size_t j = 0; j < Xi[i].size(); ++j) {
+                Xi[i][j] += (k1[i][j] + 2 * k2[i][j] + 2 * k3[i][j] + k4[i][j]) * (dt / 6);
             }
         }
 
-
-        //k3 calcs based on k3 = Xi + 0.5*k2*dt formula
-        for (int i = 0; i < k2.size(); ++i) 
-        {
-            for (int j = 0; j < k2.size(); ++j) 
-            {
-                k3[i][j] = (Xi[i][j] + (k2[i][j] * 0.5 * dt));
-                k3 = StateDir(k3, pairs);
-            }
-        }
-        //k4 calcs based on k4 = Xi + k3*dt formula
-        for (int i = 0; i < k3.size(); ++i) 
-        {
-            for (int j = 0; j < k3.size(); ++j) 
-            {
-                k4[i][j] = (Xi[i][j] + (k3[i][j] * dt));
-                k4 = StateDir(k4, pairs);
-            }
-        }
-
-
-        //rk4 result calculatons based on X_prime = (1/6.)*(k1 + 2*k2 + 2*k3 + k4) formula
-
-        Matrix2x2 XPrime;
-
-        for (int i = 0; i < k3.size(); ++i)
-        {
-            for (int j = 0; j < k3.size(); ++j)
-            {
-                XPrime[i][j] = (1 / 6) * (k1[i][j] + 2 * k2[i][j] + 2 * k3[i][j] + k4[i][j]);
-
-                Xi[i][j] += XPrime[i][j];
-            }
-        }
-        //The slowest thing ever, this is bullshit speed
-
-
-        //Return new updated Xi(current state)
+        
         return Xi;
     }
 
-    void draw_sys(vector<vector<double>>& Xi, const vector<int> &radii, const vector<array<string, 2>>& colors)
+    void Add_On_Click(vector<vector<double>>& Xi)
     {
-        const int ScreenWidth = 1920;
-        const int ScreenHight = 1080;
+        int N = Xi.size();
+        int low_bound = -50, high_bound = 50;
+        int range = (high_bound - low_bound) + 1;
 
-        SetConfigFlags(FLAG_MSAA_4X_HINT);
-        InitWindow(ScreenWidth, ScreenHight, "Universe");
-
-        SetTargetFPS(60);
-
-        float rotation = 0.0f;
-
-        int D = 2;
-        while (!WindowShouldClose())
-        {
-            BeginDrawing();
-
-            for(int i = 0; i<Nnumber; ++i)
-            {
-                for (int j = 0; j < D; ++j)
-                {
-                    DrawCircleGradient(Xi[i][j], Xi[i][j+1], radii[i], /*colors[i][j]*/ RED, /*colors[i][j]*/ BLUE);
-                }
-            }
-
-            /*
-            * Just testing for loop, might be useful or otherwise
-            DrawCircleGradient(Xi[0][1], Xi[0][2], radii[0], RED, ORANGE);
-            DrawCircleGradient(Xi[1][1], Xi[1][2], radii[1], RED, ORANGE);
-            DrawCircleGradient(Xi[2][1], Xi[2][2], radii[2], RED, ORANGE);
-            DrawCircleGradient(Xi[3][1], Xi[3][2], radii[3], RED, ORANGE);
-            DrawCircleGradient(Xi[4][1], Xi[4][2], radii[4], RED, ORANGE);
-            */
-
-
-            EndDrawing();
-        }
-           
+        Xi.push_back({ (double)GetMouseX(), (double)GetMouseY(), low_bound + double(range * rand() /
+            (RAND_MAX + 1.0)), low_bound + double(range * rand() /
+            (RAND_MAX + 1.0)), low_bound + double(range * rand() / (RAND_MAX + 1.0)),  low_bound + double(range * rand() /
+            (RAND_MAX + 1.0)) });
+        masses.push_back(rand() % 100);
+        radii.push_back(rand() % 15);
+        colors.push_back({ AllColors[rand()%21]});
+        pairs = combinations(Xi.size());
+        trails.resize(Xi.size());
+        
     }
+
+    void Draw_Trails() 
+    {
+        int N = Xi.size();
+        vector<Color> trail_color(getN());
+        for (int i = 0; i < getN(); ++i)
+        {
+            trail_color[i] = colors[i];
+        }
+
+        trails.resize(N);
+
+        const float dt = GetFrameTime();
+        rk4(Xi, dt, pairs);
+
+        int maxTrailLength = 15;
+
+        for (int i = 0; i < Xi.size(); ++i)
+        {
+            trails[i].push_back({ (float)Xi[i][0], (float)Xi[i][1] ,(float)Xi[i][2]});
+            if (trails[i].size() > maxTrailLength)
+                trails[i].erase(trails[i].begin());
+
+
+            for (int j = 0; j < trails[i].size(); ++j)
+            {
+                if (masses[i] > 198900)
+                    continue;
+                float t = (float)j / trails[i].size(); // t in [0,1], from oldest to newest
+                float radius = (1.0f + 3.0f / (1.0f - t)); // TWEAK THIS FOR AMAZING TRAILS
+                //if (radius > radii[i]) radius = radii[i]+2;
+                Color c = trail_color[i];
+                c.a = (unsigned char)(255 * (1.0f - t)); // fade out
+
+                DrawSphereEx(trails[i][j], radius, 5, 10, c);
+            }
+        }
+
+    }
+
+
+    void draw2d()
+    {
+        int N = Xi.size();
+        float dt = 10.0f;
+
+        rk4(Xi, dt, pairs);
+
+        Draw_Trails();
+
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        {
+            Add_On_Click(Xi);
+        }
+
+
+        for (int i = 0; i < Xi.size(); ++i)
+        {
+            DrawCircle(Xi[i][0], Xi[i][1], radii[i], colors[i]);
+        }
+    }
+
+    void draw3d()
+    {
+        int N = Xi.size();
+        float dt = 0.1;
+            //GetFrameTime();
+
+        rk4(Xi, dt, pairs);
+
+        Draw_Trails();
+
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        {
+            Add_On_Click(Xi);
+        }
+
+
+        for (int i = 0; i < Xi.size(); ++i) 
+        {
+            Vector3 pos_i = { Xi[i][0], Xi[i][1], Xi[i][2] };
+
+            DrawSphere(pos_i, radii[i], colors[i]);
+        }
+    }
+    
 
 
 
@@ -224,39 +260,130 @@ public:
 private:
     vector<vector<double>> Xi;
     vector<double> masses;
+    vector<int> radii;              
+    vector<Color> colors; 
+    vector<vector<Vector3>> trails;
     double G;
     std::vector<std::pair<int, int>> pairs;
 };
 
 int main()
 {
-  
-      NbodySimulation rng_sys(
-          {
-              //Xi or current state
-              {960.0, 540.0, 0.0, 0.0},
-              {80.0, 60.0, 0.0, 0.0},
-              {960.0, 360.0, 0.0, 0.0},
-              {480.0, 540.0, 0.0, 0.0},
-              {360.0, 120.0, 0.0, 0.0}
+    bool TwoD{};
+    vector<vector<double>> Zframe; //Shapshot of all Z positions before swithing to 2D
 
-          },
-          //Masses
-          { 1000.0, 100.0, 50.0, 25.0, 12.5 },
-          //Radii
-          { 30, 15, 12, 10, 5, 3 },
-          //Colors scheme for CircleGradient
-          {
-              {RED, ORANGE},
-              {BLUE, DARKBLUE},
-              {BROWN, DARKBROWN},
-              {GREEN, DARKGREEN},
-              {VIOLET, DARKPURPLE}
-          
-          },
-          //G can be change to control the gravity effect
-          100
+    NbodySimulation rng_sys
+    (
+        {
+             { 0, 0, 0, 0, 0, 0 }, // Sun
+             { 31.95, 0, 0, 0, 95.8, 0 }, // Mercury
+             { 54.1, 0, 0, 0, 70, 0 }, // Venus
+             { 74.3, 0, 0, 0, 59.6, 0 }, // Earth
+             { 113.95, 0, 0, 0, 48.2, 0 }, // Mars
+             { 389.25, 0, 0, 0, 26.2, 0 }, // Jupiter
+             { 716.5, 0, 0, 0, 19.4, 0 }, // Saturn
+             { 1436, 0, 0, 0, 13.6, 0 }, // Uranus
+             { 2247.5, 0, 0, 0, 10.8, 0 }  // Neptune
 
-      );
+        },
+        //Masses
+        { 1989000, 0.330, 4.87, 5.97, 0.642, 1900, 568, 86.8, 102 },
+        //Radii
+        { 50, 5, 5, 5, 5, 20, 12, 10, 10 },
+        //Colors scheme for CircleGradient
+        {
+            {YELLOW}, // Sun
+            {DARKGRAY}, // Mercury
+            {BEIGE}, // Venus
+            {BLUE}, // Earth
+            {RED}, // Mars
+            {ORANGE}, // Jupiter
+            {GOLD}, // Saturn
+            {SKYBLUE}, // Uranus
+            {DARKBLUE} // Neptune 
+
+        },
+        
+        //G can be change to control the gravity effect
+        0.1f
+
+    );
+
+    
+    const int ScreenWidth = 1920;
+    const int ScreenHight = 1080;
+
+    SetConfigFlags(FLAG_MSAA_4X_HINT);
+    InitWindow(ScreenWidth, ScreenHight, "Universe");
+    
+
+    Camera3D camera = { 0 };
+    camera.position = { 1000.0f, 1000.0f, 1000.0f }; // Starting position
+    camera.target = { 0.0, 0.0, 0.0 };           // Always look at the origin
+    camera.up = { 0.0f, 1.0f, 0.0f };
+    camera.fovy = 90.0f;
+    camera.projection = CAMERA_PERSPECTIVE;
+
+    SetTargetFPS(120);
+
+    float rotation = 0.0f;
+
+    DisableCursor();
+
+    float radius = 2000.0f;
+
+    while (!WindowShouldClose())
+    {
+
+        // Globals / statics:
+        static float yaw = 0.0f, pitch = 0.0f;
+        
+
+        // In your loop, grab mouse delta:
+        Vector2 d = GetMouseDelta();
+        yaw += d.x * 0.005f;                // tweak sensitivity
+        pitch = Clamp(pitch + d.y * 0.005f, -PI / 2 + 0.1f, PI / 2 - 0.1f);
+
+        // Spherical → Cartesian:
+        camera.position.x = radius * cosf(pitch) * sinf(yaw);
+        camera.position.y = radius * sinf(pitch);
+        camera.position.z = radius * cosf(pitch) * cosf(yaw);
+        camera.target = { 0.0, 0.0, 0.0 };
+        float zoomSpeed = 50.0f;  // Adjust this to control how fast zooming happens
+        radius -= GetMouseWheelMove() * zoomSpeed;
+
+        // Optional: Clamp radius to prevent going inside objects or infinitely far
+        radius = Clamp(radius, 100.0f, 5000.0f);
+
+        UpdateCamera(&camera, CAMERA_CUSTOM); // or UpdateCamera(&camera);
+
+        if (IsKeyPressed(KEY_SPACE))
+        {
+            TwoD = !TwoD;
+        }
+
+        BeginDrawing();
+
+            ClearBackground(BLACK);
+
+            if (TwoD == true)
+            {
+                rng_sys.draw2d();
+            }
+            if (TwoD == false)
+            {
+                BeginMode3D(camera);
+                //DrawGrid(10, 10);
+                rng_sys.draw3d(); // includes rk4 step and DrawSphere calls
+                EndMode3D();
+            }
+
+            DrawFPS(10, 10);
+        EndDrawing();
+
+    }
+
+    CloseWindow();
+    return 0;
 
 }
