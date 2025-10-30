@@ -40,27 +40,6 @@ It visually demonstrates how celestial bodies (like planets and stars) interact 
 
 ---
 
-## ⚙️ Installation & Running
-
-### Requirements
-- C++17 compatible compiler (e.g., `g++`, `clang++`, or Visual Studio).
-- [Raylib](https://www.raylib.com/) installed.
-
-### Build and Run (Linux / macOS)
-```bash
-g++ main.cpp -o nbody -lraylib -lm -ldl -lpthread -lGL -std=c++17
-./nbody
-````
-
-### Build (Windows)
-
-```bash
-g++ main.cpp -o nbody.exe -lraylib -lopengl32 -lgdi32 -lwinmm -std=c++17
-.\nbody.exe
-```
-
----
-
 ## 🕹️ Controls
 
 | Action              | Key / Mouse  |
@@ -103,31 +82,6 @@ Simulates a simplified **solar system**:
 | Saturn  | 716.5    | 568       | 🟡 Gold      |
 | Uranus  | 1436     | 86.8      | 💙 Sky Blue  |
 | Neptune | 2247.5   | 102       | 🔵 Dark Blue |
-
----
-
-## 🧩 Code Structure
-
-```
-.
-├── main.cpp                 # Entry point & main simulation loop
-├── NbodySimulation class    # Core physics and rendering logic
-│   ├── StateDir()           # Calculates acceleration and derivatives
-│   ├── rk4()                # RK4 integration step
-│   ├── draw3d()             # Main 3D rendering and input control
-│   └── Add_On_Click()       # Adds a new random celestial body
-└── README.md                # Project documentation
-```
-
----
-
-## 🧑‍💻 Future Improvements
-
-* Add **collision detection** and **body merging**.
-* Include **energy conservation checks**.
-* Implement **GPU acceleration** for larger systems.
-* Add **UI controls** (pause, simulation speed, reset).
-* Support **saving and loading** simulation states.
 
 ---
 
