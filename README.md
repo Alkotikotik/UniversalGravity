@@ -1,4 +1,4 @@
-````markdown
+
 # 🌌 N-Body Simulation (C++ & Raylib)
 
 This project is a **3D N-body gravitational simulation** written in **C++**, using the **Runge-Kutta (RK4)** integration method and rendered in real time with **Raylib**.  
@@ -144,11 +144,5 @@ A showcase of **physics, programming, and visualization**, great for exploring c
 
 ---
 
-### 🧑‍🚀 Author
+### 🧑‍🚀 Qclipsing - Me
 
-**[Your Name]**
-💼 Computer Science / Physics Enthusiast
-🔗 [GitHub](https://github.com/yourusername) | [LinkedIn](https://linkedin.com/in/yourprofile)
-
-```
-```
