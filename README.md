@@ -89,7 +89,7 @@ Simulates a simplified **solar system**:
 
 To make testing quick and simple, the easiest way to run this project is by using the official **Raylib Quickstart** template.
 
-1. **Download the Raylib Quickstart project** from [https://github.com/raysan5/raylib](https://github.com/raysan5/raylib](https://github.com/raylib-extras/raylib-quickstart) or use your preferred template (for example, the C++ one from `raylib/examples`).  
+1. **Download the Raylib Quickstart project** from [(https://github.com/raylib-extras/raylib-quickstart) or use your preferred template (for example, the C++ one from `raylib/examples`).  
 2. Make sure the quickstart project compiles and runs correctly first — this ensures Raylib is properly installed on your system.  
 3. Once confirmed, **replace the template’s `main.cpp` file** with the `main.cpp` file from this repository.  
 4. Rebuild and run the project. You should see the **3D N-body gravitational simulation** appear with interactive camera controls and particle trails.
