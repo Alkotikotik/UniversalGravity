@@ -64,10 +64,7 @@ https://github.com/user-attachments/assets/2a1784cf-d781-4cb7-a8be-5f285b1324cb
   * Position `(x, y, z)`
   * Velocity `(vx, vy, vz)`
   * Mass, radius, and color
-* Forces are computed pairwise using Newton’s law:
-  $$
-  F = G \frac{m_1 m_2}{r^2}
-  $$
+* Forces are computed pairwise using Newton’s law: $F = G \frac{m_1 m_2}{r^2}$
 * The **RK4 integrator** updates the system each frame for stable, realistic motion.
 * Trails visualize recent positions using alpha fading for a glowing path effect.
 
