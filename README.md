@@ -8,7 +8,7 @@ It visually demonstrates how celestial bodies (like planets and stars) interact 
 
 ## 🎬 Demo
 
-https://github.com/user-attachments/assets/8f5a3a5d-528d-4863-88fd-b7ece3e269eb
+https://github.com/user-attachments/assets/2a1784cf-d781-4cb7-a8be-5f285b1324cb
 
 ---
 
