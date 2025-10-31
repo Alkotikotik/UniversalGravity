@@ -6,6 +6,12 @@ It visually demonstrates how celestial bodies (like planets and stars) interact 
 
 ---
 
+## 🎬 Demo
+
+https://github.com/user-attachments/assets/8f5a3a5d-528d-4863-88fd-b7ece3e269eb
+
+---
+
 ## 🚀 Features
 
 - 🌍 **Realistic N-body simulation** using Newton's law of universal gravitation.  
@@ -46,7 +52,7 @@ It visually demonstrates how celestial bodies (like planets and stars) interact 
 | :------------------ | :----------- |
 | **Rotate camera**   | Move mouse   |
 | **Zoom in/out**     | Scroll wheel |
-| **Add new body**    | Left-click   |
+| **Spawn new body**  | Left-click   |
 | **Exit simulation** | Close window |
 
 ---
