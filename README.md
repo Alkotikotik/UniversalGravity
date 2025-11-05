@@ -74,7 +74,7 @@ It visually demonstrates how celestial bodies (like planets and stars) interact 
 
 ## 📚 Default Setup
 
-Simulates a simplified **solar system**:
+Simulates a simplified **solar system**, however in theory this simulation is capable of simulating any celestial system in existance and in imagination 
 
 | Body    | Distance | Mass      | Color        |
 | :------ | :------- | :-------- | :----------- |
