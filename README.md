@@ -19,7 +19,7 @@ It visually demonstrates how celestial bodies (like planets and stars) interact 
 * 🖱️ **Interactive simulation** — click to spawn new bodies dynamically
 * 🎨 **Colored trails** showing motion paths with fading transparency
 * 🎥 **Free camera controls** (mouse look and scroll zoom)
-
+* 🎥 **Switch between 2D and 3D view mode** (click space)
 ---
 
 ## 🧠 Skills Learned & Technologies Used
@@ -55,7 +55,8 @@ It visually demonstrates how celestial bodies (like planets and stars) interact 
 | **Rotate camera**   | Move mouse   |
 | **Zoom in/out**     | Scroll wheel |
 | **Spawn new body**  | Left-click   |
-| **Exit simulation** | Close window |
+| **Exit simulation** | ESC          |
+| **Switch 2D/3D**    | Space        |
 
 ---
 
@@ -74,7 +75,7 @@ It visually demonstrates how celestial bodies (like planets and stars) interact 
 
 ## 📚 Default Setup
 
-Simulates a simplified **solar system**, however in theory this simulation is capable of simulating any celestial system in the existance and in imagination 
+Simulates a simplified **solar system**, however in theory this simulation is capable of simulating any celestial system in the existance and in imagination. This can be achieced through changing, adding or removing values when initialazing NbodySimulation class in main function. It also is possible to change spawnable objects, changing their radii, mass and color to be exact, in their Add_On_Click function. Also a lot more variable can be changed in this simulation to achieve different results, for example G, dt and other can be changed. But here is the default set up:
 
 | Body    | Distance | Mass      | Color        |
 | :------ | :------- | :-------- | :----------- |
